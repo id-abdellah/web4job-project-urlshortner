@@ -8,7 +8,7 @@ const app = express();
 const port = process.env.PORT || 3000;
 
 app.use(cors());
-app.use(express.urlencoded({ extended: false })); // ✅ body parser for POST form data
+app.use(express.urlencoded({ extended: false }));
 app.use(express.json());
 
 app.use('/public', express.static(`${process.cwd()}/public`));
@@ -21,16 +21,13 @@ app.get('/api/hello', function (req, res) {
   res.json({ greeting: 'hello API' });
 });
 
-// ---- In-memory "database" ----
 let counter = 1;
-const urlsById = new Map();     // id -> original_url
-const idByUrl = new Map();      // original_url -> id (optional dedupe)
+const urlsById = new Map();    
+const idByUrl = new Map();  
 
-// ✅ POST /api/shorturl
 app.post('/api/shorturl', function (req, res) {
   const input = (req.body.url || '').trim();
 
-  // Validate URL format: must be http or https, and parseable
   let parsed;
   try {
     parsed = new URL(input);
@@ -42,11 +39,9 @@ app.post('/api/shorturl', function (req, res) {
     return res.json({ error: 'invalid url' });
   }
 
-  // Verify hostname exists using dns.lookup
   dns.lookup(parsed.hostname, (err) => {
     if (err) return res.json({ error: 'invalid url' });
 
-    // Optional: return same short id if URL already stored
     if (idByUrl.has(input)) {
       return res.json({ original_url: input, short_url: idByUrl.get(input) });
     }
@@ -59,7 +54,6 @@ app.post('/api/shorturl', function (req, res) {
   });
 });
 
-// ✅ GET /api/shorturl/:short_url -> redirect
 app.get('/api/shorturl/:short_url', function (req, res) {
   const id = parseInt(req.params.short_url, 10);
   if (!Number.isFinite(id)) return res.json({ error: 'invalid url' });
